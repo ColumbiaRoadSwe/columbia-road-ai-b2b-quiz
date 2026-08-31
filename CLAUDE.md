@@ -49,29 +49,55 @@ Scored questions (Part 3, `scored:true`) drive the maturity calculation in `resu
 
 ### Scoring
 
-`results()` computes `tot` and `mx` from Part 3 questions only. Tooltip questions are normalised to a 0–3 range; single/scale questions use their raw option count. Four named categories map subsets of question IDs:
+**Two independent axes.** They can disagree, and the disagreement is the point.
 
-- **Adoption & Tooling** — A1, A2, A3, A4
-- **Data Readiness** — B1, B2
-- **Governance** — C1, C2
-- **Team Readiness** — D1
+**1. Readiness (`tot`, 0–100)** — how solid the foundations are. `results()` walks `DIMS`, four weighted dimensions summing to 100:
 
-Stage thresholds (percentage of max score): ≤44% → Stage 1, ≤68% → Stage 1–2, ≤92% → Stage 2, >92% → Stage 3.
+| Dimension | Weight | Question IDs |
+|---|---|---|
+| Connected tools | 25 | A3, A4 |
+| Your data | 30 | B1, B2 |
+| Ownership | 30 | C1, C2 |
+| Your team | 15 | D1 |
+
+Each answer normalises to `raw/(n-1)` of its own scale, scaled by that question's share of the dimension weight. An unanswered or "don't know" answer earns `NA_CREDIT = 0.25` rather than 0 — so **real scores compress into roughly 20–55**, not 0–100. Anything bucketing this on a 0–100 axis will look broken.
+
+`READY` maps the score to a band: ≤22 `Not there yet`, ≤32 `Early days`, ≤41 `Getting there`, ≤50 `Ready for more`, else `Solid ground`.
+
+**2. Stage (`stageKey`, 0–3)** — what's actually running. Derived **only** from A1/A2, independent of the score. A1/A2 carry `scored:true` but are in no `DIMS.ids` array, so they contribute nothing to `tot`.
+
+`FIT` compares the two: `ahead` (foundations better than what's live), `matched`, or `stretched` (running ahead of foundations).
 
 ### ROI model
 
 Built inside `results()` from sales/marketing inputs (deal size, close rate, admin time, lead volume). Conservative assumptions: +15% relative close-rate lift, 25% admin-hour recovery, +20% lead-to-conversation lift. Missing inputs are silently skipped.
 
-### Integrations (require configuration)
+### Integrations
 
-Two constants at the bottom of the `<script>` block must be set before deploying:
+Two constants at the bottom of the `<script>` block:
 
 ```js
-const N8N_WEBHOOK_URL = 'https://YOUR_N8N_INSTANCE/webhook/ai-maturity-quiz';
-const MEET_URL = 'https://calendar.google.com/calendar/appointments/YOUR_LINK_HERE';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/.../exec';
+const MEET_URL = '...';
 ```
 
-The webhook fires automatically on results render via `fetch(POST)` with the full `QUIZ_RESULT` payload plus `name`, `email`, and `submitted_at`.
+The webhook fires automatically on results render via `fetch(POST)` with the full `QUIZ_RESULT` payload plus `name`, `email`, `submitted_at`. It uses **`mode:'no-cors'`**, so the response is opaque — **the quiz cannot detect a server-side failure.** Debug via the GAS editor's Executions log, or the `_raw` / `_errors` sheets the webhook writes.
+
+### ⚠️ Cross-file contract
+
+`QUIZ_RESULT` (index.html:968) is the wire format for two other files. **A scoring change is not done until all three agree** — this exact desync silently blanked the Score and category columns for every submission once already:
+
+| index.html | must match |
+|---|---|
+| `QUIZ_RESULT` keys | `COLUMNS` / `HEADERS` in `quiz-webhook.gs` (one column per key, HEADERS[i] labels COLUMNS[i], then 4 manual columns) |
+| `STAGES` `lv` labels | `STAGE_ORDER` in `quiz-webhook.gs` |
+| `READY` `lv` labels | `BAND_ORDER` in `quiz-webhook.gs` |
+| `DIMS` keys | `DIM_ORDER` in `quiz-webhook.gs` |
+| label arrays `_dealLbls`…`_blkLbls` (index.html:947) | the question `opts` they duplicate — parallel copies, not references |
+
+`aggregated-results.html` deliberately holds **no** stage or band label strings; it colours distributions by position from the zero-filled, canonically-ordered objects `doGet` returns. Keep it that way.
+
+After editing `quiz-webhook.gs`: run `resetSheet()` once if HEADERS changed, then `testPost_v2()` / `testDoGet()` from the GAS editor **before** deploying — editor runs use saved code, but `/exec` serves the last *deployed version*. Redeploy via **Manage deployments → Edit → New version** to keep the URL (it's hardcoded in `index.html`, `aggregated-results.html`, and `AppsScript deployment ID.md`).
 
 ## Context file
 

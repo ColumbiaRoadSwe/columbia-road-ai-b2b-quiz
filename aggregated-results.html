@@ -30,7 +30,7 @@ body { background:var(--navy); color:var(--white); font-family:var(--body); font
 .pulse.active { opacity:1 }
 
 /* ── Layout ── */
-.grid { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto auto; gap:2px; padding:2px }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:2px }
 .card { background:rgba(255,255,255,.04); padding:28px 28px 24px }
 .card-wide { grid-column:1 / -1 }
 .card-label { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--yellow); margin-bottom:4px }
@@ -51,11 +51,10 @@ body { background:var(--navy); color:var(--white); font-family:var(--body); font
 .legend-label { color:rgba(255,255,255,.8) }
 .legend-pct { margin-left:auto; font-weight:600; color:var(--white); font-size:14px }
 
-/* ── Histogram ── */
+/* ── Bar chart (readiness bands) — bar colour set inline, by position ── */
 .hist-bars { display:flex; align-items:flex-end; gap:6px; height:120px }
 .hist-bar-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1 }
 .hist-bar { width:100%; background:var(--forest); border-radius:4px 4px 0 0; transition:height .6s cubic-bezier(.4,0,.2,1); min-height:2px; position:relative }
-.hist-bar.highlight { background:var(--yellow) }
 .hist-bar-count { font-size:10px; color:rgba(255,255,255,.55); line-height:1 }
 .hist-labels { display:flex; gap:6px; margin-top:6px }
 .hist-label { flex:1; text-align:center; font-size:10px; color:rgba(255,255,255,.4) }
@@ -97,19 +96,15 @@ body { background:var(--navy); color:var(--white); font-family:var(--body); font
 const DASHBOARD_DATA_URL = 'https://script.google.com/macros/s/AKfycby-Zy07mCjO1Cztm9qpGx61ToDO1JokwzLPhJ3VcN3yS0IZ_wzt0MDoKNzwD_czHlXH/exec';
 const REFRESH_INTERVAL_MS = 45000;
 
-// ── Stage colour map ──────────────────────────────────────────────────────────
-const STAGE_COLORS = {
-  'Stage 1: Pilots & POCs':             '#F7CED7',
-  'Stage 1–2: Building to Production':  '#FDD17A',
-  'Stage 2: Single Agents in Production': '#B9D9EB',
-  'Stage 3: Multi-Agent Systems':       '#034638',
-};
-const STAGE_ORDER = [
-  'Stage 1: Pilots & POCs',
-  'Stage 1–2: Building to Production',
-  'Stage 2: Single Agents in Production',
-  'Stage 3: Multi-Agent Systems',
-];
+// ── Palettes ──────────────────────────────────────────────────────────────────
+// Deliberately no stage or band label strings in this file. The Apps Script
+// returns its distributions zero-filled in canonical order, and colours are
+// assigned by POSITION — hardcoding labels here is what silently broke the
+// stage donut when the quiz's scoring was rewritten.
+const STAGE_PALETTE = ['#E5E1DC', '#F7CED7', '#B9D9EB', '#034638']; // S0 → S3
+const BAND_PALETTE  = ['#651D32', '#988873', '#FDD17A', '#B9D9EB', '#034638'];
+const DIM_PALETTE   = ['#002A3A', '#034638', '#651D32', '#988873']; // matches index.html DIMS
+const STALE_AFTER_MS = 3 * 60 * 1000;
 
 // ── SVG helpers ───────────────────────────────────────────────────────────────
 function polarToXY(cx, cy, r, angleDeg) {
@@ -125,42 +120,42 @@ function arcPath(cx, cy, r, startDeg, endDeg) {
 }
 
 // ── Donut chart ───────────────────────────────────────────────────────────────
+// Server key order is canonical; colour by index. Zero-count stages are skipped
+// in the arc loop but KEPT in the legend at 0% — "nobody here is at Stage 3 yet"
+// is a better talking point than a missing row.
 function renderDonut(stageDist, total) {
-  const cx = 80, cy = 80, r = 64, inner = 40;
+  const cx = 80, cy = 80, r = 64;
+  const names = Object.keys(stageDist || {});
+  if (!names.length) return '<div style="color:rgba(255,255,255,.35);font-size:13px">No data yet</div>';
+
   let segments = '';
   let legendItems = '';
   let current = 0;
 
-  const stages = STAGE_ORDER.filter(s => stageDist[s]);
-  if (stages.length === 0) return '<div style="color:rgba(255,255,255,.35);font-size:13px">No data yet</div>';
-
-  stages.forEach(name => {
+  names.forEach((name, i) => {
     const count = stageDist[name] || 0;
     const pct = total > 0 ? count / total : 0;
-    const sweep = pct * 360;
-    const end = current + sweep;
-    const color = STAGE_COLORS[name] || '#555';
+    const color = STAGE_PALETTE[i % STAGE_PALETTE.length];
 
     if (pct > 0) {
-      if (pct === 1) {
-        // Full circle — use two arcs to avoid SVG degenerate case
+      if (pct >= 1) {
+        // Full circle — two arcs, since a 360° arc is degenerate in SVG
         segments += `<path d="${arcPath(cx,cy,r,0,180)}" fill="none" stroke="${color}" stroke-width="24"/>`;
         segments += `<path d="${arcPath(cx,cy,r,180,360)}" fill="none" stroke="${color}" stroke-width="24"/>`;
       } else {
-        segments += `<path d="${arcPath(cx,cy,r,current,end)}" fill="none" stroke="${color}" stroke-width="24"/>`;
+        segments += `<path d="${arcPath(cx,cy,r,current,current + pct*360)}" fill="none" stroke="${color}" stroke-width="24"/>`;
       }
+      current += pct * 360;
     }
 
-    const pctDisplay = Math.round(pct * 100);
-    const shortName = name.replace('Stage ', 'S').replace(': Pilots & POCs', ' · Pilots').replace(': Building to Production', ' · Building').replace(': Single Agents in Production', ' · Agents live').replace(': Multi-Agent Systems', ' · Multi-agent');
+    // 'Stage 2: First agents live' → 'S2 · First agents live'
+    const shortName = name.replace(/^Stage (\d+):\s*/, 'S$1 · ');
     legendItems += `
-      <div class="legend-item">
+      <div class="legend-item"${count === 0 ? ' style="opacity:.45"' : ''}>
         <div class="legend-dot" style="background:${color}"></div>
         <div class="legend-label">${shortName}</div>
-        <div class="legend-pct">${pctDisplay}%</div>
+        <div class="legend-pct">${Math.round(pct * 100)}%</div>
       </div>`;
-
-    current = end;
   });
 
   return `
@@ -173,30 +168,58 @@ function renderDonut(stageDist, total) {
     </div>`;
 }
 
-// ── Histogram ─────────────────────────────────────────────────────────────────
-function renderHistogram(buckets) {
-  const ALL_BUCKETS = ['0','10','20','30','40','50','60','70','80','90','100'];
-  const counts = ALL_BUCKETS.map(b => buckets[b] || 0);
+// ── Readiness bands ───────────────────────────────────────────────────────────
+// Replaces the old 0–100 decile histogram. Real scores compress into roughly
+// 20–55 (the NA_CREDIT floor in index.html gives every unanswered question 0.25),
+// so deciles were the wrong axis — the five READY bands are the real cut points.
+const BAND_SHORT = ['Not there', 'Early', 'Getting there', 'Ready', 'Solid'];
+
+function renderBands(bandDist, readiness) {
+  const names = Object.keys(bandDist || {});
+  if (!names.length) return '<div style="color:rgba(255,255,255,.35);font-size:13px">No data yet</div>';
+
+  const counts = names.map(n => bandDist[n] || 0);
   const maxCount = Math.max(...counts, 1);
 
-  const bars = counts.map((c, i) => {
-    const heightPct = (c / maxCount) * 100;
-    const isHighlight = i >= 2 && i <= 5; // 20–50 range — typically most populated
-    return `
+  const bars = counts.map((c, i) => `
       <div class="hist-bar-wrap">
         <div class="hist-bar-count">${c > 0 ? c : ''}</div>
-        <div class="hist-bar${isHighlight ? ' highlight' : ''}" style="height:${Math.max(heightPct, c > 0 ? 4 : 2)}%"></div>
-      </div>`;
-  }).join('');
+        <div class="hist-bar" style="height:${Math.max((c / maxCount) * 100, c > 0 ? 4 : 2)}%;background:${BAND_PALETTE[i % BAND_PALETTE.length]}"></div>
+      </div>`).join('');
 
-  const labels = ['0','10','20','30','40','50','60','70','80','90','100'].map(l =>
-    `<div class="hist-label">${l}</div>`
+  const labels = names.map((n, i) =>
+    `<div class="hist-label">${BAND_SHORT[i] || n}</div>`
   ).join('');
+
+  const median = readiness && readiness.median !== null && readiness.median !== undefined
+    ? `median score ${readiness.median}/100` : 'no scores yet';
 
   return `
     <div class="hist-bars">${bars}</div>
     <div class="hist-labels">${labels}</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:8px;text-align:center">Score % (0 = lowest, 100 = highest)</div>`;
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:8px;text-align:center">Readiness band · ${median}</div>`;
+}
+
+// ── The four foundations ──────────────────────────────────────────────────────
+// Room average per dimension. Reuses the blocker bar-list CSS. Fixed server
+// order so bars don't reshuffle between 45s polls in front of an audience.
+function renderDims(dimMeans) {
+  const names = Object.keys(dimMeans || {});
+  if (!names.length) return '<div style="color:rgba(255,255,255,.35);font-size:13px">No data yet</div>';
+
+  return `<div class="bar-list">` + names.map((name, i) => {
+    const pct = Math.max(0, Math.min(100, Math.round(dimMeans[name] || 0)));
+    return `
+      <div class="bar-item">
+        <div class="bar-header">
+          <div class="bar-label-text">${name}</div>
+          <div class="bar-pct-text">${pct}%</div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${DIM_PALETTE[i % DIM_PALETTE.length]}"></div>
+        </div>
+      </div>`;
+  }).join('') + `</div>`;
 }
 
 // ── Blocker bar chart ─────────────────────────────────────────────────────────
@@ -248,21 +271,33 @@ function render(data) {
   root.innerHTML = `
     <div class="grid">
       <div class="card">
-        <div class="card-label">Stage distribution</div>
+        <div class="card-label">What's actually live</div>
         <div class="card-title">Where the room is</div>
         ${renderDonut(data.stage_distribution, data.total)}
       </div>
 
       <div class="card">
-        <div class="card-label">Score distribution</div>
-        <div class="card-title">How scores are spread</div>
-        ${renderHistogram(data.score_pct_buckets)}
+        <div class="card-label">Readiness</div>
+        <div class="card-title">How ready the room is</div>
+        ${renderBands(data.band_distribution, data.readiness)}
       </div>
 
-      <div class="card card-wide">
+      <div class="card">
+        <div class="card-label">Room average</div>
+        <div class="card-title">The four foundations</div>
+        ${renderDims(data.dimension_means)}
+      </div>
+
+      <div class="card">
         <div class="card-label">What's getting in the way</div>
         <div class="card-title">Top blockers</div>
         ${renderBlockers(data.top_blockers, data.total)}
+      </div>
+
+      <div class="card card-wide">
+        <div class="card-label">Where people want to start</div>
+        <div class="card-title">Top opportunities</div>
+        ${renderBlockers(data.top_opportunities, data.total)}
       </div>
     </div>`;
 }
@@ -282,11 +317,18 @@ function fetchData() {
   fetch(DASHBOARD_DATA_URL)
     .then(r => r.json())
     .then(data => {
+      if (data && data.error) throw new Error(data.error);
       render(data);
       updated.textContent = 'Updated ' + fmt(new Date());
+      // Tint if the server's own data is stale — catches a dead poll on a screen
+      // nobody is watching closely.
+      const age = data && data.generated_at
+        ? Date.now() - new Date(data.generated_at).getTime() : 0;
+      updated.style.color = age > STALE_AFTER_MS ? 'var(--yellow)' : '';
     })
     .catch(err => {
       updated.textContent = 'Error — retrying';
+      updated.style.color = 'var(--yellow)';
       console.error(err);
     })
     .finally(() => {
