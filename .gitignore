@@ -1,0 +1,3 @@
+# Generated per-participant result pages — contain attendee names and emails.
+# Regenerate with: python3 generate-result-pages.py
+result-pages/
