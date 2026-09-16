@@ -21,10 +21,10 @@ const COLUMNS = [
   'stage',
   'stage_index',
   'fit',
-  'connected_tools_pct',
-  'data_pct',
-  'ownership_pct',
-  'team_pct',
+  'data_layer_pct',
+  'context_layer_pct',
+  'orchestration_layer_pct',
+  'eval_obs_layer_pct',
   'weakest_area',
   'strongest_area',
   'points_to_next_band',
@@ -67,10 +67,10 @@ const HEADERS = [
   'Stage',
   'Stage #',
   'Fit (foundations vs live)',
-  'Connected tools %',
-  'Your data %',
-  'Ownership %',
-  'Your team %',
+  'Data Layer %',
+  'Context Layer %',
+  'Orchestration Layer %',
+  'Evaluation & Observation Layer %',
   'Weakest area',
   'Strongest area',
   'Points to next band',
@@ -114,16 +114,16 @@ const STAGE_ORDER = [
 ];
 const BAND_ORDER = ['Not there yet', 'Early days', 'Getting there', 'Ready for more', 'Solid ground'];
 const FIT_ORDER  = ['ahead', 'matched', 'stretched'];
-const DIM_ORDER  = ['Connected tools', 'Your data', 'Ownership', 'Your team'];
+const DIM_ORDER  = ['Data Layer', 'Context Layer', 'Orchestration Layer', 'Evaluation & Observation Layer'];
 
 // Dimension name → prompt-ready English, for the follow-up email.
 const AREA_PHRASE = {
-  'Connected tools': 'how their systems connect and share data',
-  'Your data':       'the state of their customer and sales data',
-  'Ownership':       'who owns AI and how decisions actually get made',
-  'Your team':       'how much their team uses AI day to day',
-  'none':            'no single weak area — all four foundations are even',
-  '':                'their overall foundations',
+  'Data Layer':                    'the state of their customer and sales data',
+  'Context Layer':                 'the company knowledge their AI can draw on',
+  'Orchestration Layer':           'how their systems connect and share data',
+  'Evaluation & Observation Layer':'who owns AI and how they track whether it works',
+  'none':                          'no single weak area — all four foundations are even',
+  '':                              'their overall foundations',
 };
 function areaPhrase_(area) {
   return AREA_PHRASE[String(area)] || String(area);
@@ -344,10 +344,10 @@ function doGet(e) {
           weakest_category:    row[col('weakest_area')]   || '',
           strongest_area:      row[col('strongest_area')] || '',
           dims: {
-            connected_tools: row[col('connected_tools_pct')],
-            data:            row[col('data_pct')],
-            ownership:       row[col('ownership_pct')],
-            team:            row[col('team_pct')],
+            data_layer:    row[col('data_layer_pct')],
+            context_layer: row[col('context_layer_pct')],
+            orchestration: row[col('orchestration_layer_pct')],
+            eval_obs:      row[col('eval_obs_layer_pct')],
           },
           next_moves:          row[col('next_moves')] || '',
           points_to_next_band: row[col('points_to_next_band')],
@@ -367,10 +367,10 @@ function doGet(e) {
     const dimSums     = zeroFilled_(DIM_ORDER);
     const dimCounts   = zeroFilled_(DIM_ORDER);
     const dimColumn   = {
-      'Connected tools': 'connected_tools_pct',
-      'Your data':       'data_pct',
-      'Ownership':       'ownership_pct',
-      'Your team':       'team_pct',
+      'Data Layer':                    'data_layer_pct',
+      'Context Layer':                 'context_layer_pct',
+      'Orchestration Layer':           'orchestration_layer_pct',
+      'Evaluation & Observation Layer':'eval_obs_layer_pct',
     };
 
     const blockerCounts = {};
@@ -666,7 +666,7 @@ function testSetup() {
 // legitimately empty), and stage_index (legitimately 0).
 const REQUIRED_SCORING_COLS = [
   'readiness_score', 'readiness_band', 'stage', 'fit',
-  'connected_tools_pct', 'data_pct', 'ownership_pct', 'team_pct',
+  'data_layer_pct', 'context_layer_pct', 'orchestration_layer_pct', 'eval_obs_layer_pct',
   'weakest_area', 'strongest_area',
 ];
 
@@ -675,20 +675,20 @@ const REQUIRED_SCORING_COLS = [
 function testPost_v2() {
   const VARIANTS = [
     { stage_index: 0, stage: STAGE_ORDER[0], readiness_score: 21, readiness_band: BAND_ORDER[0], fit: 'matched',
-      connected_tools_pct: 25, data_pct: 25, ownership_pct: 25, team_pct: 25,
-      weakest_area: 'none',            strongest_area: 'Your team',       roi_estimate_eur: null },
+      data_layer_pct: 25, context_layer_pct: 25, orchestration_layer_pct: 25, eval_obs_layer_pct: 25,
+      weakest_area: 'none',                         strongest_area: 'Evaluation & Observation Layer', roi_estimate_eur: null },
     { stage_index: 1, stage: STAGE_ORDER[1], readiness_score: 30, readiness_band: BAND_ORDER[1], fit: 'matched',
-      connected_tools_pct: 42, data_pct: 25, ownership_pct: 20, team_pct: 67,
-      weakest_area: 'Ownership',       strongest_area: 'Your team',       roi_estimate_eur: 240000 },
+      data_layer_pct: 42, context_layer_pct: 25, orchestration_layer_pct: 20, eval_obs_layer_pct: 67,
+      weakest_area: 'Orchestration Layer',          strongest_area: 'Evaluation & Observation Layer', roi_estimate_eur: 240000 },
     { stage_index: 1, stage: STAGE_ORDER[1], readiness_score: 38, readiness_band: BAND_ORDER[2], fit: 'matched',
-      connected_tools_pct: 50, data_pct: 33, ownership_pct: 40, team_pct: 33,
-      weakest_area: 'Your data',       strongest_area: 'Connected tools', roi_estimate_eur: 610000 },
+      data_layer_pct: 50, context_layer_pct: 33, orchestration_layer_pct: 40, eval_obs_layer_pct: 33,
+      weakest_area: 'Context Layer',                strongest_area: 'Data Layer',                     roi_estimate_eur: 610000 },
     { stage_index: 3, stage: STAGE_ORDER[3], readiness_score: 44, readiness_band: BAND_ORDER[3], fit: 'stretched',
-      connected_tools_pct: 58, data_pct: 42, ownership_pct: 33, team_pct: 67,
-      weakest_area: 'Ownership',       strongest_area: 'Your team',       roi_estimate_eur: 1850000 },
+      data_layer_pct: 58, context_layer_pct: 42, orchestration_layer_pct: 33, eval_obs_layer_pct: 67,
+      weakest_area: 'Orchestration Layer',          strongest_area: 'Evaluation & Observation Layer', roi_estimate_eur: 1850000 },
     { stage_index: 2, stage: STAGE_ORDER[2], readiness_score: 54, readiness_band: BAND_ORDER[4], fit: 'ahead',
-      connected_tools_pct: 75, data_pct: 58, ownership_pct: 60, team_pct: 100,
-      weakest_area: 'Your data',       strongest_area: 'Your team',       roi_estimate_eur: 380000 },
+      data_layer_pct: 75, context_layer_pct: 58, orchestration_layer_pct: 60, eval_obs_layer_pct: 100,
+      weakest_area: 'Context Layer',                strongest_area: 'Evaluation & Observation Layer', roi_estimate_eur: 380000 },
   ];
 
   VARIANTS.forEach(function (v, i) {
