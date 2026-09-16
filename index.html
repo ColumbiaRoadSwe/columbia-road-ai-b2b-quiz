@@ -299,20 +299,20 @@ function build(){
 
   // P2 — Maturity (scored)
   S.push({id:'mat',label:'PART 3 OF 4',title:'AI Maturity',desc:'This section is scored. It\'s a mix of picks and quick scales.',qs:[
-    {id:'A1',tag:'A1 · YOUR AI STAGE',q:'How is your team using AI tools today?',m:'single',scored:true,opts:[
+    {id:'A1',tag:'YOUR AI STAGE',q:'How is your team using AI tools today?',m:'single',scored:true,opts:[
       'No shared tools, just a few people experimenting on their own',
       'We use AI assistants (e.g. Copilot, ChatGPT) for writing and research',
       'We have access to a platform to build or manage AI workflows and agents',
       'AI is embedded across our commercial stack: CRM, outreach, reporting'
     ],fu:{t:'all',l:'Comments (optional)'}},
-    {id:'A2',tag:'A2 · YOUR AI STAGE',q:'Have you deployed any AI agents, meaning software that takes actions automatically on your behalf?',m:'single',scored:true,opts:[
+    {id:'A2',tag:'YOUR AI STAGE',q:'Have you deployed any AI agents, meaning software that takes actions automatically on your behalf?',m:'single',scored:true,opts:[
       'No, we haven\'t looked into it',
       'We have identified a list of use cases to explore',
       'We\'ve run a pilot or experiment',
       'We have one or two running in production',
       'Multiple agents are live across sales and marketing'
     ],fu:{t:[1,2,3,4],l:'What are they doing?'}},
-    {id:'A3',tag:'A3 · ORCHESTRATION LAYER',q:'How do your AI and commercial tools share data with each other?',m:'tooltip',scored:true,opts:[
+    {id:'A3',tag:'ORCHESTRATION LAYER',q:'How do your AI and commercial tools share data with each other?',m:'tooltip',scored:true,opts:[
       'Manual copy-paste',
       'Basic automations',
       'API / MCP connections',
@@ -323,7 +323,7 @@ function build(){
       'Programmatic real-time integrations. Your CRM, email sequencer, and intent data talk to each other via APIs or MCP connectors.',
       'A semantic or data cloud layer (e.g. Salesforce Data Cloud, dbt, a CDP) where all commercial data is harmonised and agents query one source of truth.'
     ],scaleNote:'Not sure / don\'t know',fu:{t:[2,3],l:'Which systems are connected?'}},
-    {id:'A4',tag:'A4 · ORCHESTRATION LAYER',q:'How mature is your AI setup?',m:'tooltip',scored:true,opts:[
+    {id:'A4',tag:'ORCHESTRATION LAYER',q:'How mature is your AI setup?',m:'tooltip',scored:true,opts:[
       'No AI tools used regularly, or no alignment...everyone has their own solution',
       'We use AI features inside each tool but they are not connected to each other',
       'Shared data foundation for most AI uses',
@@ -334,7 +334,7 @@ function build(){
       'Every AI tool reads from the same customer and sales data, so what one tool knows, the others know too.',
       'On top of shared data, your tools draw on the same skills, prompts, and instructions, so an improvement in one place benefits all of them.'
     ],scaleNote:'Not sure / don\'t know'},
-    {id:'B1',tag:'B1 · DATA LAYER',q:'How would you describe the state of your customer and sales data?',m:'tooltip',scored:true,opts:[
+    {id:'B1',tag:'DATA LAYER',q:'How would you describe the state of your customer and sales data?',m:'tooltip',scored:true,opts:[
       'Siloed & incomplete',
       'Centralised but dirty',
       'Clean & enriched',
@@ -345,7 +345,7 @@ function build(){
       'Accounts and contacts are deduplicated, enriched (company size, industry, intent signals), and activity is reliably captured across channels.',
       'Transactional, firmographic, and behavioural data (web, product, support) are joined at the account level and accessible to agents in real time.'
     ],scaleNote:'Not applicable / don\'t know'},
-    {id:'B2',tag:'B2 · CONTEXT LAYER',q:'When your team uses AI, where does it get company and customer knowledge from?',m:'tooltip',scored:true,opts:[
+    {id:'B2',tag:'CONTEXT LAYER',q:'When your team uses AI, where does it get company and customer knowledge from?',m:'tooltip',scored:true,opts:[
       'Whatever someone pastes in',
       'Scattered docs and wikis',
       'One shared knowledge base',
@@ -356,7 +356,7 @@ function build(){
       'One place holds the material your AI tools draw on, but it is updated when someone remembers and there is no record of what changed.',
       'That knowledge base has an owner, gets reviewed on a set schedule, and is versioned like code, so you can see what the AI was working from and when it changed.'
     ],scaleNote:'Not sure / don\'t know',fu:{t:[1,2,3],l:'Where does it live (e.g. Notion, a wiki, SharePoint)?'}},
-    {id:'C1',tag:'C1 · EVALUATION & OBSERVATION',q:'Who owns AI in your organisation, and how are decisions made?',m:'tooltip',scored:true,opts:[
+    {id:'C1',tag:'EVALUATION & OBSERVATION',q:'Who owns AI in your organisation, and how are decisions made?',m:'tooltip',scored:true,opts:[
       'No ownership',
       'Tech / IT owns it',
       'Each team runs their own',
@@ -369,7 +369,7 @@ function build(){
       'A dedicated function (AI CoE, AI team, or similar) sets standards, evaluates tools, and prioritises use cases across the business.',
       'A central AI function sets guardrails and standards; embedded AI leads within each business unit drive execution. Business and tech co-own outcomes.'
     ]},
-    {id:'C2',tag:'C2 · EVALUATION & OBSERVATION',q:'How much do sales and marketing contribute to building AI?',m:'tooltip',scored:true,opts:[
+    {id:'C2',tag:'EVALUATION & OBSERVATION',q:'How much do sales and marketing contribute to building AI?',m:'tooltip',scored:true,opts:[
       'IT builds and owns it',
       'Sales gives needs and reviews output',
       'Sales documents processes and builds skills',
@@ -380,7 +380,7 @@ function build(){
       'Commercial teams write down how the work is really done and turn that into reusable instructions and skills for AI to follow.',
       'Sales and marketing write their own prompts and configure agents themselves, with IT providing the platform and the guardrails.'
     ],scaleNote:'Not sure / don\'t know'},
-    {id:'D1',tag:'D1 · EVALUATION & OBSERVATION',q:'How would you describe your team\'s attitude toward AI?',m:'scale',scored:true,
+    {id:'D1',tag:'EVALUATION & OBSERVATION',q:'How would you describe your team\'s attitude toward AI?',m:'scale',scored:true,
       sl:['Avoiding it','Curious but cautious','Using it regularly','Pushing for more']},
   ]});
 

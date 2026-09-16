@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Maturity · Live Results</title>
+<title>AI Maturity / Live Results</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --navy:#002A3A; --forest:#034638; --burgundy:#651D32;
+  --navy:#002A3A; --forest:#034638; --burgundy:#651D32; --salmon:#F2A5A5;
   --yellow:#FDD17A; --cream:#F9F6EC; --light-blue:#B9D9EB;
   --taupe:#988873; --warm:#E5E1DC; --grey-d:#E5E5E5; --grey-c:#C0C0C0;
   --black:#161616; --grey-b:#353535; --white:#FFFFFF;
@@ -15,26 +15,24 @@
   --body:'Work Sans',sans-serif;
 }
 * { margin:0; padding:0; box-sizing:border-box }
-body { background:var(--navy); color:var(--white); font-family:var(--body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh }
+body { background:var(--forest); color:var(--white); font-family:var(--body); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; min-height:100vh }
 
 /* ── Header ── */
 .hdr { display:flex; justify-content:space-between; align-items:center; padding:20px 32px; border-bottom:1px solid rgba(255,255,255,.12) }
 .hdr-left { display:flex; align-items:baseline; gap:16px }
 .hdr-title { font-family:var(--display); font-size:1.5rem; font-weight:400; color:var(--white) }
-.hdr-tag { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--yellow) }
+.hdr-tag { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--salmon) }
 .hdr-right { text-align:right }
 .participant-count { font-family:var(--display); font-size:2.25rem; font-weight:400; color:var(--yellow); line-height:1 }
 .participant-label { font-size:12px; color:rgba(255,255,255,.55); margin-top:2px }
 .refresh-status { font-size:11px; color:rgba(255,255,255,.4); margin-top:6px; display:flex; align-items:center; justify-content:flex-end; gap:6px }
-.pulse { width:7px; height:7px; border-radius:50%; background:var(--yellow); opacity:0; transition:opacity .3s }
-.pulse.active { opacity:1 }
 
 /* ── Layout ── */
-.grid { display:grid; grid-template-columns:1fr 1fr; gap:2px; padding:2px }
-.card { background:rgba(255,255,255,.04); padding:28px 28px 24px }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; padding:24px }
+.card { background:rgba(255,255,255,.07); border-radius:8px; border:1px solid rgba(255,255,255,.09); padding:28px 28px 24px }
 .card-wide { grid-column:1 / -1 }
-.card-label { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--yellow); margin-bottom:4px }
-.card-title { font-family:var(--display); font-size:1.25rem; font-weight:400; margin-bottom:20px }
+.card-label { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.08em; color:var(--salmon); margin-bottom:4px }
+.card-title { font-family:var(--display); font-size:1.5rem; font-weight:400; margin-bottom:20px }
 
 /* ── Empty state ── */
 .empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:calc(100vh - 90px); gap:12px; opacity:.45 }
@@ -57,7 +55,7 @@ body { background:var(--navy); color:var(--white); font-family:var(--body); font
 .hist-bar { width:100%; background:var(--forest); border-radius:4px 4px 0 0; transition:height .6s cubic-bezier(.4,0,.2,1); min-height:2px; position:relative }
 .hist-bar-count { font-size:10px; color:rgba(255,255,255,.55); line-height:1 }
 .hist-labels { display:flex; gap:6px; margin-top:6px }
-.hist-label { flex:1; text-align:center; font-size:10px; color:rgba(255,255,255,.4) }
+.hist-label { flex:1; text-align:center; font-size:10px; color:rgba(255,255,255,.55) }
 
 /* ── Horizontal bar chart (blockers) ── */
 .bar-list { display:flex; flex-direction:column; gap:14px }
@@ -74,7 +72,7 @@ body { background:var(--navy); color:var(--white); font-family:var(--body); font
 <header class="hdr">
   <div class="hdr-left">
     <div>
-      <div class="hdr-tag">Columbia Road · Stockholm 2026</div>
+      <div class="hdr-tag">Columbia Road / Stockholm 2026</div>
       <div class="hdr-title">AI Maturity in B2B Sales &amp; Marketing</div>
     </div>
   </div>
@@ -82,7 +80,6 @@ body { background:var(--navy); color:var(--white); font-family:var(--body); font
     <div class="participant-count" id="count">—</div>
     <div class="participant-label">participants so far</div>
     <div class="refresh-status">
-      <span class="pulse" id="pulse"></span>
       <span id="updated">Connecting…</span>
     </div>
   </div>
@@ -149,7 +146,7 @@ function renderDonut(stageDist, total) {
     }
 
     // 'Stage 2: First agents live' → 'S2 · First agents live'
-    const shortName = name.replace(/^Stage (\d+):\s*/, 'S$1 · ');
+    const shortName = name.replace(/^Stage (\d+):\s*/, 'S$1 ');
     legendItems += `
       <div class="legend-item"${count === 0 ? ' style="opacity:.45"' : ''}>
         <div class="legend-dot" style="background:${color}"></div>
@@ -197,7 +194,7 @@ function renderBands(bandDist, readiness) {
   return `
     <div class="hist-bars">${bars}</div>
     <div class="hist-labels">${labels}</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:8px;text-align:center">Readiness band · ${median}</div>`;
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:8px;text-align:center">Readiness band  ${median}</div>`;
 }
 
 // ── The four foundations ──────────────────────────────────────────────────────
@@ -223,11 +220,12 @@ function renderDims(dimMeans) {
 }
 
 // ── Blocker bar chart ─────────────────────────────────────────────────────────
-function renderBlockers(blockerCounts, total) {
+function renderBlockers(blockerCounts, total, fillColor) {
   if (!total || Object.keys(blockerCounts).length === 0) {
     return '<div style="color:rgba(255,255,255,.35);font-size:13px">No data yet</div>';
   }
 
+  const color = fillColor || 'var(--burgundy)';
   const sorted = Object.entries(blockerCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
@@ -244,7 +242,7 @@ function renderBlockers(blockerCounts, total) {
           <div class="bar-pct-text">${pct}%</div>
         </div>
         <div class="bar-track">
-          <div class="bar-fill" style="width:${barWidth}%"></div>
+          <div class="bar-fill" style="width:${barWidth}%;background:${color}"></div>
         </div>
       </div>`;
   }).join('') + `</div>`;
@@ -297,7 +295,7 @@ function render(data) {
       <div class="card card-wide">
         <div class="card-label">Where people want to start</div>
         <div class="card-title">Top opportunities</div>
-        ${renderBlockers(data.top_opportunities, data.total)}
+        ${renderBlockers(data.top_opportunities, data.total, 'rgba(255,255,255,.55)')}
       </div>
     </div>`;
 }
@@ -310,9 +308,7 @@ function fmt(d) {
 }
 
 function fetchData() {
-  const pulse = document.getElementById('pulse');
   const updated = document.getElementById('updated');
-  pulse.classList.add('active');
 
   fetch(DASHBOARD_DATA_URL)
     .then(r => r.json())
@@ -330,9 +326,6 @@ function fetchData() {
       updated.textContent = 'Error — retrying';
       updated.style.color = 'var(--yellow)';
       console.error(err);
-    })
-    .finally(() => {
-      setTimeout(() => pulse.classList.remove('active'), 600);
     });
 }
 
